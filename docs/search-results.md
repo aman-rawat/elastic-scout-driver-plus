@@ -12,7 +12,7 @@ $raw = Book::searchQuery($query)->raw();
 
 ## SearchResult
 
-You can execute the query and get `ElasticScoutDriverPlus\Decorators\SearchResult` instance in return:
+You can execute the query and get `Elastic\ScoutDriverPlus\Decorators\SearchResult` instance in return:
 
 ```php
 $searchResult = Book::searchQuery($query)->execute();
@@ -124,6 +124,12 @@ $text = $firstSuggestion->text();
 $offset = $firstSuggestion->offset();
 $length = $firstSuggestion->length();
 $options = $firstSuggestion->options();
+```
+
+You can also resolve the related models when [the completion suggester](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters.html#completion-suggester) is used:
+
+```php
+$models = $firstSuggestion->models();
 ```
 
 ### total

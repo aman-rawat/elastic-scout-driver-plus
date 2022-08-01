@@ -1,8 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace ElasticScoutDriverPlus\Factories;
+namespace Elastic\ScoutDriverPlus\Factories;
 
-use ElasticAdapter\Documents\Routing;
+use Elastic\Adapter\Documents\Routing;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 class RoutingFactory implements RoutingFactoryInterface
@@ -12,7 +13,8 @@ class RoutingFactory implements RoutingFactoryInterface
         $routing = new Routing();
 
         foreach ($models as $model) {
-            if ($value = $model->shardRouting()) {
+            /** @var Model $model */
+            if ($value = $model->searchableRouting()) {
                 $routing->add((string)$model->getScoutKey(), (string)$value);
             }
         }

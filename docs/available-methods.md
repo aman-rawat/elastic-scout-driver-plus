@@ -1,17 +1,19 @@
 # Available Methods
 
 * [aggregate](#aggregate)
-* [boostIndex](#boostindex)
 * [collapse](#collapse)
 * [from](#from)
 * [highlight](#highlight)
 * [join](#join)
 * [load](#load)
 * [minScore](#minscore)
+* [pointInTime](#pointintime)
 * [postFilter](#postfilter)
 * [preference](#preference)
 * [refineModels](#refinemodels)
 * [rescore](#rescore)
+* [routing](#routing)
+* [searchAfter](#searchafter)
 * [searchType](#searchtype)
 * [size](#size)
 * [sort](#sort)
@@ -19,6 +21,7 @@
 * [suggest](#suggest)
 * [trackScores](#trackscores)
 * [trackTotalHits](#tracktotalhits)
+* [unless](#unless)
 * [when](#when)
 
 ### aggregate
@@ -55,17 +58,6 @@ You can retrieve the aggregated data from the search result as follows:
 ```php
 $aggregations = $searchResult->aggregations();
 $maxPrice = $aggregations->get('max_price');
-```
-
-### boostIndex
-
-When searching in multiple indices, you can [boost results from a specific index](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-multiple-indices.html#index-boost):
-
-```php
-$searchResult = Author::searchQuery($query)
-    ->join(Book::class)
-    ->boostIndex(Book::class, 2)
-    ->execute();
 ```
 
 ### collapse
@@ -159,13 +151,21 @@ $searchResult = Author::searchQuery($query)
     ->execute();
 ```
 
-In the example above, we search for an author with name `John` or a book with title `The Book` in two different indices. 
-It does not matter if we start the query from `Book` or `Author` model. Remember though, that the result collection of models 
-includes both types in this case:
+In the example above, we search for an author with name `John` or a book with title `The Book` in two different indices.
+Note that the result collection of models includes both types:
 
 ```php
 // every model is either Author or Book
 $models = $searchResult->models();
+```
+
+When searching in multiple indices, you can [boost results from a specific index](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-multiple-indices.html#index-boost)
+by providing the second argument in `join` method:
+
+```php
+$searchResult = Author::searchQuery($query)
+    ->join(Book::class, 2)
+    ->execute();
 ```
 
 ### load
@@ -198,6 +198,22 @@ $searchResult = Book::searchQuery($query)
     ->execute();
 ```
 
+### pointInTime
+
+`pointInTime` allows you to set a [point in time](https://www.elastic.co/guide/en/elasticsearch/reference/current/point-in-time-api.html#point-in-time-api) 
+that should be used for the search:
+
+```php
+$pit = Book::openPointInTime('1m');
+
+$searchResult = Book::searchQuery($query)
+    ->pointInTime($pit, '5m')
+    ->execute();
+```
+
+**Note**, that [join](#join), [preference](#preference) and [routing](#routing) parameters are ignored 
+when `pointInTime` is used.
+
 ### postFilter
 
 `postFilter` is used to [filter search results](https://www.elastic.co/guide/en/elasticsearch/reference/current/filter-search-results.html#post-filter):
@@ -227,34 +243,6 @@ $searchResult = Book::searchQuery($query)
 ```php
 $searchResult = Book::searchQuery($query)
     ->preference('_local')
-    ->execute();
-```
-
-### size
-
-`size` method [limits the number of hits to return](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html):
-
-```php
-$searchResult = Book::searchQuery($query)
-    ->size(2)
-    ->execute();
-```
-
-### sort
-
-This method [sorts](https://www.elastic.co/guide/en/elasticsearch/reference/current/sort-search-results.html) the search results:
-
-```php
-$searchResult = Book::searchQuery($query)
-    ->sort('price', 'asc')
-    ->execute();
-```
-
-In case you need more advanced sorting algorithm use `sortRaw`:
-
-```php
-$searchResult = Book::searchQuery($query)
-    ->sortRaw([['price' => 'asc'], ['published' => 'asc']])
     ->execute();
 ```
 
@@ -292,8 +280,8 @@ $models = Book::searchQuery($query)
 
 ### rescore
 
-This method allows you to [rescore](https://www.elastic.co/guide/en/elasticsearch/reference/current/filter-search-results.html#rescore) 
-the search results. In addition, you can also use `rescoreWeights` and `rescoreWindowSize` to set `query_weight`, 
+This method allows you to [rescore](https://www.elastic.co/guide/en/elasticsearch/reference/current/filter-search-results.html#rescore)
+the search results. In addition, you can also use `rescoreWeights` and `rescoreWindowSize` to set `query_weight`,
 `rescore_query_weight` and `window_size`:
 
 ```php
@@ -331,6 +319,33 @@ $searchResult = Book::searchQuery($query)
     ->execute();
 ```
 
+### routing
+
+This method allows you to [search with custom routing](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html#_searching_with_custom_routing):
+
+```php
+$searchResult = Book::searchQuery($query)
+    ->routing(['author1', 'author2'])
+    ->execute();
+```
+
+### searchAfter
+
+You can use `searchAfter` [to retrieve the next page of hits using a set of sort values from the previous page](https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html#search-after):
+
+```php
+$firstPage = Book::searchQuery($query)
+    ->pointInTime($pit)
+    ->execute();
+
+$searchAfter = $firstPage->hits()->last()->sort();
+
+$secondPage = Book::searchQuery($query)
+    ->pointInTime($pit)
+    ->searchAfter($searchAfter)
+    ->execute();
+```
+
 ### searchType
 
 `searchType` defines [how distributed term frequencies are calculated for relevance scoring](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html#search-search-api-query-params):
@@ -338,6 +353,34 @@ $searchResult = Book::searchQuery($query)
 ```php
 $searchResult = Book::searchQuery($query)
     ->searchType('query_then_fetch')
+    ->execute();
+```
+
+### size
+
+`size` method [limits the number of hits to return](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html):
+
+```php
+$searchResult = Book::searchQuery($query)
+    ->size(2)
+    ->execute();
+```
+
+### sort
+
+This method [sorts](https://www.elastic.co/guide/en/elasticsearch/reference/current/sort-search-results.html) the search results:
+
+```php
+$searchResult = Book::searchQuery($query)
+    ->sort('price', 'asc')
+    ->execute();
+```
+
+In case you need more advanced sorting algorithm use `sortRaw`:
+
+```php
+$searchResult = Book::searchQuery($query)
+    ->sortRaw([['price' => 'asc'], ['published' => 'asc']])
     ->execute();
 ```
 
@@ -351,7 +394,7 @@ $searchResult = Book::searchQuery($query)
     ->execute();
 ```
 
-`sourceRaw` allows you to use a single wildcard pattern, an array of fields or a boolean value in case you want to 
+`sourceRaw` allows you to use a single wildcard pattern, an array of fields or a boolean value in case you want to
 exclude document source from the result:
 
 ```php
@@ -403,6 +446,8 @@ $offset = $firstSuggestion->offset();
 $length = $firstSuggestion->length();
 // an arbitrary number of options
 $options = $firstSuggestion->options();
+// related models (only some suggesters support this feature)
+$models = $firstSuggestion->models();
 // an array representation of the suggestion
 $raw = $firstSuggestion->raw();
 ```
@@ -427,9 +472,34 @@ $searchResult = Book::searchQuery($query)
     ->execute();
 ```
 
+### unless
+
+This method will execute the given callback unless the first argument given to the method evaluates to `true`:
+
+```php
+$searchResult = Book::searchQuery($query)
+    ->unless($orderBy, function ($builder, $orderBy) {
+        return $builder->sort($orderBy, 'asc');
+    })
+    ->execute();
+```
+
+You may also pass another closure as a third argument to the `unless` method. This closure will be only executed
+if the first argument evaluates to `true`:
+
+```php
+$searchResult = Book::searchQuery($query)
+    ->unless($orderBy, function ($builder, $orderBy) {
+        return $builder->sort($orderBy, 'asc');
+    }, function ($builder) {
+         return $builder->sort('price', 'asc');
+     })
+    ->execute();
+```
+
 ### when
 
-This method can be used to apply certain clauses based on another condition:
+This method will execute the given callback when the first argument given to the method evaluates to `true`:
 
 ```php
 $searchResult = Book::searchQuery($query)
@@ -440,7 +510,7 @@ $searchResult = Book::searchQuery($query)
 ```
 
 You may also pass another closure as a third argument to the `when` method. This closure will be only executed
-if the first argument evaluates as `false`:
+if the first argument evaluates to `false`:
 
 ```php
 $searchResult = Book::searchQuery($query)

@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace ElasticScoutDriverPlus\Factories;
+namespace Elastic\ScoutDriverPlus\Factories;
 
-use ElasticScoutDriver\Factories\DocumentFactory as BaseDocumentFactory;
+use Elastic\ScoutDriver\Factories\DocumentFactory as BaseDocumentFactory;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection as BaseCollection;
 

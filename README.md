@@ -31,28 +31,29 @@ Extension for [Elastic Scout Driver](https://github.com/babenkoivan/elastic-scou
   * [Search results](#search-results)
   * [Custom routing](#custom-routing)
   * [Eager loading relations](#eager-loading-relations)
+  * [Multiple connections](#multiple-connections)
 
 ## Features
 
 Elastic Scout Driver Plus supports:
 
-* [Search across multiple indices](docs/available-methods.md#join)
 * [Aggregations](docs/available-methods.md#aggregate)
-* [Highlighting](docs/available-methods.md#highlight)
-* [Suggesters](docs/available-methods.md#suggest)
-* [Source filtering](docs/available-methods.md#source)
-* [Field collapsing](docs/available-methods.md#collapse)
 * [Custom routing](#custom-routing)
+* [Highlighting](docs/available-methods.md#highlight)
+* [Multiple connections](#multiple-connections)
+* [Search across multiple indices](docs/available-methods.md#join)
+* [Search after](docs/available-methods.md#searchafter)
+* [Source filtering](docs/available-methods.md#source)
+* [Suggesters](docs/available-methods.md#suggest)
 
 ## Compatibility
 
 The current version of Elastic Scout Driver Plus has been tested with the following configuration:
 
-* PHP 7.3-8.0
-* Elasticsearch 7.x
-* Laravel 6.x-8.x
+* PHP 7.4-8.0
+* Elasticsearch 8.x
+* Laravel 7.x-9.x
 * Laravel Scout 7.x-9.x
-* Elastic Scout Driver 2.x
 
 ## Installation
 
@@ -70,7 +71,7 @@ already use Elastic Scout Driver, I recommend you to update it before installing
 composer update babenkoivan/elastic-scout-driver
 ```
 
-After installing the libraries, you need to add `ElasticScoutDriverPlus\Searchable` trait to your models. In case 
+After installing the libraries, you need to add `Elastic\ScoutDriverPlus\Searchable` trait to your models. In case 
 some models already use the standard `Laravel\Scout\Searchable` trait, you should replace it with the one provided by 
 Elastic Scout Driver Plus.
 
@@ -85,7 +86,7 @@ Before you begin searching a model, you should define a query. You can either us
 with an array:
 
 ```php
-use ElasticScoutDriverPlus\Support\Query;
+use Elastic\ScoutDriverPlus\Support\Query;
 
 // using a query builder
 $query = Query::match()
@@ -104,12 +105,13 @@ $query = [
 ];
 ```
 
-Each method of `ElasticScoutDriverPlus\Support\Query` factory creates a query builder for the respective type. 
+Each method of `Elastic\ScoutDriverPlus\Support\Query` factory creates a query builder for the respective type. 
 Available methods are listed below:
 
 * [bool](docs/compound-queries.md#boolean)
 * [exists](docs/term-queries.md#exists)
 * [fuzzy](docs/term-queries.md#fuzzy)
+* [geoDistance](docs/geo-queries.md#geo-distance)
 * [ids](docs/term-queries.md#ids)
 * [matchAll](docs/full-text-queries.md#match-all)
 * [matchNone](docs/full-text-queries.md#match-none)
@@ -185,14 +187,14 @@ You can get more familiar with the `$searchResult` object and learn how to pagin
 ### Custom Routing
 
 If you want to use a [custom shard routing](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html)
-for your model, override the `shardRouting` method:
+for your model, override the `searchableRouting` method:
 
 ```php
 class Book extends Model
 {
-    use ElasticScoutDriverPlus\Searchable;
+    use Elastic\ScoutDriverPlus\Searchable;
     
-    public function shardRouting()
+    public function searchableRouting()
     {
         return $this->user->id;
     }
@@ -208,7 +210,7 @@ Sometimes you need to index your model with related data:
 ```php
 class Book extends Model
 {
-    use ElasticScoutDriverPlus\Searchable;
+    use Elastic\ScoutDriverPlus\Searchable;
     
     public function toSearchableArray()
     {
@@ -226,7 +228,7 @@ You can improve the performance of bulk operations by overriding the `searchable
 ```php
 class Book extends Model
 {
-    use ElasticScoutDriverPlus\Searchable;
+    use Elastic\ScoutDriverPlus\Searchable;
     
     public function toSearchableArray()
     {
@@ -246,3 +248,20 @@ class Book extends Model
 
 In case you are looking for a way to preload relations for models matching a search query, check the builder's
 `load` method [documentation](docs/available-methods.md#load).
+
+### Multiple Connections
+
+You can configure multiple connections to Elasticsearch in the [client's configuration file](https://github.com/babenkoivan/elastic-client/tree/master#configuration).
+If you want to change a connection used by a model, you need to override the `searchableConnection` method:
+
+```php
+class Book extends Model
+{
+    use Elastic\ScoutDriverPlus\Searchable;
+    
+    public function searchableConnection(): ?string
+    {
+        return 'books';
+    }
+}
+```

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace ElasticScoutDriverPlus\Tests\App;
+namespace Elastic\ScoutDriverPlus\Tests\App;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,15 +45,15 @@ class Book extends Model
     public function toSearchableArray()
     {
         $searchable = parent::toSearchableArray();
+        $searchable['suggest'] = $this->title;
         $searchable['author'] = $this->author->only(['name', 'phone_number']);
-
         return $searchable;
     }
 
     /**
      * @return string
      */
-    public function shardRouting()
+    public function searchableRouting()
     {
         return $this->author->name;
     }

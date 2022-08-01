@@ -1,29 +1,20 @@
 <?php declare(strict_types=1);
 
-namespace ElasticScoutDriverPlus\Builders;
+namespace Elastic\ScoutDriverPlus\Builders;
 
-use ElasticScoutDriverPlus\QueryParameters\ParameterCollection;
-use ElasticScoutDriverPlus\QueryParameters\Transformers\ArrayTransformerInterface;
-use ElasticScoutDriverPlus\QueryParameters\Validators\ValidatorInterface;
+use Elastic\ScoutDriverPlus\QueryParameters\ParameterCollection;
+use Elastic\ScoutDriverPlus\QueryParameters\Transformers\ArrayTransformerInterface;
+use Elastic\ScoutDriverPlus\QueryParameters\Validators\ValidatorInterface;
+use Elastic\ScoutDriverPlus\Support\Conditionable;
 
 abstract class AbstractParameterizedQueryBuilder implements QueryBuilderInterface
 {
-    /**
-     * @var string
-     */
-    protected $type;
-    /**
-     * @var ParameterCollection
-     */
-    protected $parameters;
-    /**
-     * @var ValidatorInterface
-     */
-    protected $parameterValidator;
-    /**
-     * @var ArrayTransformerInterface
-     */
-    protected $parameterTransformer;
+    use Conditionable;
+
+    protected string $type;
+    protected ParameterCollection $parameters;
+    protected ValidatorInterface $parameterValidator;
+    protected ArrayTransformerInterface $parameterTransformer;
 
     public function buildQuery(): array
     {

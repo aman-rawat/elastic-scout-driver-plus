@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace ElasticScoutDriverPlus\Jobs;
+namespace Elastic\ScoutDriverPlus\Jobs;
 
-use ElasticAdapter\Documents\DocumentManager;
-use ElasticAdapter\Documents\Routing;
-use ElasticScoutDriverPlus\Factories\RoutingFactoryInterface;
+use Elastic\Adapter\Documents\DocumentManager;
+use Elastic\Adapter\Documents\Routing;
+use Elastic\ScoutDriverPlus\Factories\RoutingFactoryInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
@@ -14,31 +14,23 @@ final class RemoveFromSearch implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * @var string
-     */
-    public $indexName;
-    /**
-     * @var Routing
-     */
-    public $routing;
-    /**
-     * @var string[]
-     */
-    public $documentIds;
+    public string $indexName;
+    public Routing $routing;
+    public array $documentIds;
 
     public function __construct(Collection $models)
     {
         $this->indexName = $models->first()->searchableAs();
         $this->routing = app(RoutingFactoryInterface::class)->makeFromModels($models);
 
-        $this->documentIds = $models->map(static function (Model $model) {
-            return (string)$model->getScoutKey();
-        })->all();
+        $this->documentIds = $models->map(
+            static fn (Model $model) => (string)$model->getScoutKey()
+        )->all();
     }
 
     public function handle(DocumentManager $documentManager): void
     {
+        /** @var bool $refreshDocuments */
         $refreshDocuments = config('elastic.scout_driver.refresh_documents');
         $documentManager->delete($this->indexName, $this->documentIds, $refreshDocuments, $this->routing);
     }

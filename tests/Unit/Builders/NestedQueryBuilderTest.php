@@ -1,26 +1,23 @@
 <?php declare(strict_types=1);
 
-namespace ElasticScoutDriverPlus\Tests\Unit\Builders;
+namespace Elastic\ScoutDriverPlus\Tests\Unit\Builders;
 
-use ElasticScoutDriverPlus\Builders\NestedQueryBuilder;
-use ElasticScoutDriverPlus\Exceptions\QueryBuilderException;
+use Elastic\ScoutDriverPlus\Builders\NestedQueryBuilder;
+use Elastic\ScoutDriverPlus\Exceptions\QueryBuilderValidationException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \ElasticScoutDriverPlus\Builders\AbstractParameterizedQueryBuilder
- * @covers \ElasticScoutDriverPlus\Builders\NestedQueryBuilder
+ * @covers \Elastic\ScoutDriverPlus\Builders\AbstractParameterizedQueryBuilder
+ * @covers \Elastic\ScoutDriverPlus\Builders\NestedQueryBuilder
  *
- * @uses   \ElasticScoutDriverPlus\Factories\ParameterFactory
- * @uses   \ElasticScoutDriverPlus\QueryParameters\ParameterCollection
- * @uses   \ElasticScoutDriverPlus\QueryParameters\Transformers\FlatArrayTransformer
- * @uses   \ElasticScoutDriverPlus\QueryParameters\Validators\AllOfValidator
+ * @uses   \Elastic\ScoutDriverPlus\Factories\ParameterFactory
+ * @uses   \Elastic\ScoutDriverPlus\QueryParameters\ParameterCollection
+ * @uses   \Elastic\ScoutDriverPlus\QueryParameters\Transformers\FlatArrayTransformer
+ * @uses   \Elastic\ScoutDriverPlus\QueryParameters\Validators\AllOfValidator
  */
 final class NestedQueryBuilderTest extends TestCase
 {
-    /**
-     * @var NestedQueryBuilder
-     */
-    private $builder;
+    private NestedQueryBuilder $builder;
 
     protected function setUp(): void
     {
@@ -31,7 +28,7 @@ final class NestedQueryBuilderTest extends TestCase
 
     public function test_exception_is_thrown_when_path_is_not_specified(): void
     {
-        $this->expectException(QueryBuilderException::class);
+        $this->expectException(QueryBuilderValidationException::class);
 
         $this->builder
             ->query([
@@ -44,7 +41,7 @@ final class NestedQueryBuilderTest extends TestCase
 
     public function test_exception_is_thrown_when_query_is_not_specified(): void
     {
-        $this->expectException(QueryBuilderException::class);
+        $this->expectException(QueryBuilderValidationException::class);
 
         $this->builder
             ->path('obj')

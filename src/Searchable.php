@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace ElasticScoutDriverPlus;
+namespace Elastic\ScoutDriverPlus;
 
 use Closure;
-use ElasticScoutDriverPlus\Builders\QueryBuilderInterface;
-use ElasticScoutDriverPlus\Builders\SearchRequestBuilder;
-use ElasticScoutDriverPlus\Jobs\RemoveFromSearch;
+use Elastic\ScoutDriverPlus\Builders\QueryBuilderInterface;
+use Elastic\ScoutDriverPlus\Builders\SearchParametersBuilder;
+use Elastic\ScoutDriverPlus\Jobs\RemoveFromSearch;
 use Illuminate\Database\Eloquent\Collection;
 use Laravel\Scout\Searchable as BaseSearchable;
 
@@ -14,20 +14,27 @@ trait Searchable
 {
     use BaseSearchable {
         queueRemoveFromSearch as baseQueueRemoveFromSearch;
+        searchableUsing as baseSearchableUsing;
     }
 
     /**
      * @param Closure|QueryBuilderInterface|array|null $query
      */
-    public static function searchQuery($query = null): SearchRequestBuilder
+    public static function searchQuery($query = null): SearchParametersBuilder
     {
-        return new SearchRequestBuilder($query, new static());
+        $builder = new SearchParametersBuilder(new static());
+
+        if (isset($query)) {
+            $builder->query($query);
+        }
+
+        return $builder;
     }
 
     /**
      * @return string|int|null
      */
-    public function shardRouting()
+    public function searchableRouting()
     {
         return null;
     }
@@ -38,6 +45,23 @@ trait Searchable
     public function searchableWith()
     {
         return null;
+    }
+
+    public function searchableConnection(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * @return Engine
+     */
+    public function searchableUsing()
+    {
+        /** @var Engine $engine */
+        $engine = $this->baseSearchableUsing();
+        $connection = $this->searchableConnection();
+
+        return isset($connection) ? $engine->connection($connection) : $engine;
     }
 
     /**
@@ -64,6 +88,23 @@ trait Searchable
         dispatch(new RemoveFromSearch($models))
             ->onQueue($models->first()->syncWithSearchUsingQueue())
             ->onConnection($models->first()->syncWithSearchUsing());
+    }
+
+    public static function openPointInTime(?string $keepAlive = null): string
+    {
+        $self = new static();
+        $engine = $self->searchableUsing();
+        $indexName = $self->searchableAs();
+
+        return $engine->openPointInTime($indexName, $keepAlive);
+    }
+
+    public static function closePointInTime(string $pointInTimeId): void
+    {
+        $self = new static();
+        $engine = $self->searchableUsing();
+
+        $engine->closePointInTime($pointInTimeId);
     }
 
     protected function usesElasticDriver(): bool

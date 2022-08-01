@@ -1,18 +1,22 @@
 <?php declare(strict_types=1);
 
-namespace ElasticScoutDriverPlus\Decorators;
+namespace Elastic\ScoutDriverPlus\Decorators;
 
 use ArrayIterator;
-use ElasticAdapter\Search\Hit as BaseHit;
-use ElasticAdapter\Search\SearchResponse;
-use ElasticScoutDriverPlus\Factories\LazyModelFactory;
+use Elastic\Adapter\Search\Hit as BaseHit;
+use Elastic\Adapter\Search\SearchResult as BaseSearchResult;
+use Elastic\Adapter\Search\Suggestion as BaseSuggestion;
+use Elastic\ScoutDriverPlus\Factories\LazyModelFactory;
+use Elastic\ScoutDriverPlus\Factories\ModelFactory;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Collection as BaseCollection;
 use Illuminate\Support\Traits\ForwardsCalls;
 use IteratorAggregate;
+use Traversable;
 
 /**
- * @mixin SearchResponse
+ * @mixin BaseSearchResult
  * @mixin BaseCollection
  *
  * @implements IteratorAggregate<int, Hit>
@@ -21,55 +25,60 @@ final class SearchResult implements IteratorAggregate
 {
     use ForwardsCalls;
 
-    /**
-     * @var SearchResponse
-     */
-    private $searchResponse;
-    /**
-     * @var LazyModelFactory
-     */
-    private $lazyModelFactory;
+    private BaseSearchResult $baseSearchResult;
+    private ModelFactory $modelFactory;
+    private LazyModelFactory $lazyModelFactory;
 
-    public function __construct(SearchResponse $searchResponse, LazyModelFactory $lazyModelFactory)
+    public function __construct(BaseSearchResult $baseSearchResult, ModelFactory $modelFactory)
     {
-        $this->searchResponse = $searchResponse;
-        $this->lazyModelFactory = $lazyModelFactory;
+        $this->baseSearchResult = $baseSearchResult;
+        $this->modelFactory = $modelFactory;
+        $this->lazyModelFactory = new LazyModelFactory($baseSearchResult, $modelFactory);
     }
 
     public function hits(): BaseCollection
     {
-        return $this->searchResponse->hits()->map(function (BaseHit $hit) {
-            return new Hit($hit, $this->lazyModelFactory);
-        });
+        return $this->baseSearchResult->hits()->map(
+            fn (BaseHit $baseHit) => new Hit($baseHit, $this->lazyModelFactory)
+        );
     }
 
     public function models(): EloquentCollection
     {
-        $models = $this->hits()->map(static function (Hit $hit) {
-            return $hit->model();
-        })->filter()->values();
+        $models = $this->hits()->map(
+            static fn (Hit $hit) => $hit->model()
+        )->filter()->values();
 
         return new EloquentCollection($models);
     }
 
+    public function suggestions(): BaseCollection
+    {
+        return $this->baseSearchResult->suggestions()->map(
+            fn (Collection $baseSuggestions) => $baseSuggestions->map(
+                fn (BaseSuggestion $baseSuggestion) => new Suggestion($baseSuggestion, $this->modelFactory)
+            )
+        );
+    }
+
     public function documents(): BaseCollection
     {
-        return $this->hits()->map(static function (Hit $hit) {
-            return $hit->document();
-        })->filter()->values();
+        return $this->hits()->map(
+            static fn (Hit $hit) => $hit->document()
+        );
     }
 
     public function highlights(): BaseCollection
     {
-        return $this->hits()->map(static function (Hit $hit) {
-            return $hit->highlight();
-        })->filter()->values();
+        return $this->hits()->map(
+            static fn (Hit $hit) => $hit->highlight()
+        )->filter()->values();
     }
 
     /**
-     * @return ArrayIterator<int, Hit>
+     * @return ArrayIterator|Traversable
      */
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return $this->hits()->getIterator();
     }
@@ -79,6 +88,6 @@ final class SearchResult implements IteratorAggregate
      */
     public function __call(string $method, array $parameters)
     {
-        return $this->forwardCallTo($this->searchResponse, $method, $parameters);
+        return $this->forwardCallTo($this->baseSearchResult, $method, $parameters);
     }
 }
