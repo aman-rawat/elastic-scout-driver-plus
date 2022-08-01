@@ -16,7 +16,7 @@
             "name": "Aman Rawat",
             "email": "amanrwt99@gmail.com"
         }
-    ]
+    ],
     "autoload": {
         "psr-4": {
             "ElasticScoutDriverPlus\\": "src"
