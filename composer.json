@@ -1,5 +1,5 @@
 {
-    "name": "babenkoivan/elastic-scout-driver-plus",
+    "name": "aman-rawat/elastic-scout-driver-plus",
     "description": "Extension for Elastic Scout Driver",
     "keywords": [
         "scout",
@@ -13,20 +13,10 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Ivan Babenko",
-            "email": "babenko.i.a@gmail.com"
+            "name": "Aman Rawat",
+            "email": "amanrwt99@gmail.com"
         }
-    ],
-    "funding": [
-        {
-            "type": "ko-fi",
-            "url": "https://ko-fi.com/ivanbabenko"
-        },
-        {
-            "type": "paypal",
-            "url": "https://paypal.me/babenkoi"
-        }
-    ],
+    ]
     "autoload": {
         "psr-4": {
             "ElasticScoutDriverPlus\\": "src"
