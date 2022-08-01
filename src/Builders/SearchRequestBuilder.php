@@ -95,7 +95,7 @@ class SearchRequestBuilder
      */
     private $preference;
     /**
-     * @var string|null
+     * @var bool|null
      */
     private $explain;
     /**
