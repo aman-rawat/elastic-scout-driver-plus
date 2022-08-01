@@ -299,7 +299,7 @@ class SearchRequestBuilder
         return $this;
     }
 
-    public function explain(string $explain): self
+    public function explain(bool $explain): self
     {
         $this->explain = $explain;
         return $this;
