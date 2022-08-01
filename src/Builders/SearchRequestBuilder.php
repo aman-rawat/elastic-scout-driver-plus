@@ -94,7 +94,10 @@ class SearchRequestBuilder
      * @var string|null
      */
     private $preference;
-
+    /**
+     * @var string|null
+     */
+    private $explain;
     /**
      * @param Closure|QueryBuilderInterface|array|null $query
      */
@@ -296,6 +299,12 @@ class SearchRequestBuilder
         return $this;
     }
 
+    public function explain(string $explain): self
+    {
+        $this->explain = $explain;
+        return $this;
+    }
+
     /**
      * @param mixed         $value
      * @param callable      $callback
@@ -382,6 +391,10 @@ class SearchRequestBuilder
 
         if (isset($this->preference)) {
             $searchRequest->preference($this->preference);
+        }
+
+        if (isset($this->explain)) {
+            $searchRequest->explain($this->explain);
         }
 
         return $searchRequest;
