@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Elastic\ScoutDriverPlus\Decorators;
+namespace ElasticScoutDriverPlus\Decorators;
 
-use Elastic\Adapter\Search\Hit as BaseHit;
-use Elastic\ScoutDriverPlus\Factories\LazyModelFactory;
+use ElasticAdapter\Search\Hit as BaseHit;
+use ElasticScoutDriverPlus\Factories\LazyModelFactory;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\ForwardsCalls;
@@ -15,18 +15,24 @@ final class Hit implements Arrayable
 {
     use ForwardsCalls;
 
-    private BaseHit $baseHit;
-    private LazyModelFactory $lazyModelFactory;
+    /**
+     * @var BaseHit
+     */
+    private $hit;
+    /**
+     * @var LazyModelFactory
+     */
+    private $lazyModelFactory;
 
-    public function __construct(BaseHit $baseHit, LazyModelFactory $lazyModelFactory)
+    public function __construct(BaseHit $hit, LazyModelFactory $lazyModelFactory)
     {
-        $this->baseHit = $baseHit;
+        $this->hit = $hit;
         $this->lazyModelFactory = $lazyModelFactory;
     }
 
     public function model(): ?Model
     {
-        return $this->lazyModelFactory->makeFromIndexNameAndDocumentId(
+        return $this->lazyModelFactory->makeByIndexNameAndDocumentId(
             $this->indexName(),
             $this->document()->id()
         );
@@ -37,11 +43,11 @@ final class Hit implements Arrayable
      */
     public function __call(string $method, array $parameters)
     {
-        return $this->forwardCallTo($this->baseHit, $method, $parameters);
+        return $this->forwardCallTo($this->hit, $method, $parameters);
     }
 
     /**
-     * {@inheritDoc}
+     * @{@inheritDoc}
      */
     public function toArray()
     {
